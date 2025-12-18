@@ -21,13 +21,13 @@ interface DesktopCompanionProps {
 
 // GitHub repository info - UPDATE THESE TO YOUR ACTUAL REPO
 // To configure: Replace 'your-username' and 'your-repo' with your actual GitHub username and repository name
-const GITHUB_OWNER = 'your-username';
-const GITHUB_REPO = 'timetracker-desktop';
+const GITHUB_OWNER = 'AlicePettey';
+const GITHUB_REPO = 'timetracker';
 const RELEASES_URL = `https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/releases`;
 const LATEST_RELEASE_API = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/releases/latest`;
 
 // Set this to true once you've configured your GitHub repository
-const IS_REPO_CONFIGURED = false;
+const IS_REPO_CONFIGURED = true;
 
 interface ReleaseAsset {
   name: string;
