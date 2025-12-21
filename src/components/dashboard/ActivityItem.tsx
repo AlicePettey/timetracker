@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Activity, Project, Task } from '@/types';
 import { formatDuration, formatTime } from '@/utils/timeUtils';
-import { getAppIcon, CheckIcon, XIcon, ChevronDownIcon } from '@/components/ui/Icons';
+import { getAppIcon, CheckIcon, XIcon, ChevronDownIcon, TrashIcon } from '@/components/ui/Icons';
 import { getCategorizationEngine } from '@/utils/categorization';
 import { useCategorySync } from '@/hooks/useCategorySync';
 
@@ -10,6 +10,7 @@ interface ActivityItemProps {
   projects: Project[];
   onCode: (activityId: string, projectId: string, taskId: string) => void;
   onUncode: (activityId: string) => void;
+  onDelete?: (activityId: string) => void;
   isSelected?: boolean;
   onSelect?: (activityId: string) => void;
   showCheckbox?: boolean;
@@ -20,6 +21,7 @@ const ActivityItem: React.FC<ActivityItemProps> = ({
   projects,
   onCode,
   onUncode,
+  onDelete,
   isSelected = false,
   onSelect,
   showCheckbox = false
@@ -27,6 +29,7 @@ const ActivityItem: React.FC<ActivityItemProps> = ({
   const [isExpanded, setIsExpanded] = useState(false);
   const [selectedProject, setSelectedProject] = useState<string>(activity.projectId || '');
   const [selectedTask, setSelectedTask] = useState<string>(activity.taskId || '');
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   // Use synced categories and rules
   const { categories: syncedCategories, rules: syncedRules } = useCategorySync();
@@ -52,6 +55,18 @@ const ActivityItem: React.FC<ActivityItemProps> = ({
     if (selectedProject && selectedTask) {
       onCode(activity.id, selectedProject, selectedTask);
       setIsExpanded(false);
+    }
+  };
+
+  const handleDelete = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (showDeleteConfirm) {
+      onDelete?.(activity.id);
+      setShowDeleteConfirm(false);
+    } else {
+      setShowDeleteConfirm(true);
+      // Auto-hide confirmation after 3 seconds
+      setTimeout(() => setShowDeleteConfirm(false), 3000);
     }
   };
 
@@ -130,6 +145,7 @@ const ActivityItem: React.FC<ActivityItemProps> = ({
                 onUncode(activity.id);
               }}
               className="ml-1 p-0.5 hover:bg-white/20 rounded"
+              title="Remove assignment"
             >
               <XIcon size={14} />
             </button>
@@ -139,12 +155,36 @@ const ActivityItem: React.FC<ActivityItemProps> = ({
             Uncoded
           </span>
         )}
+
+        {/* Delete Button */}
+        {onDelete && (
+          <button
+            onClick={handleDelete}
+            className={`p-2 rounded-lg transition-colors ${
+              showDeleteConfirm 
+                ? 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400' 
+                : 'hover:bg-red-50 dark:hover:bg-red-900/20 text-gray-400 hover:text-red-500 dark:hover:text-red-400'
+            }`}
+            title={showDeleteConfirm ? 'Click again to confirm delete' : 'Delete activity'}
+          >
+            <TrashIcon size={16} />
+          </button>
+        )}
         
         <ChevronDownIcon 
           size={20} 
           className={`text-gray-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`} 
         />
       </div>
+
+      {/* Delete Confirmation Banner */}
+      {showDeleteConfirm && (
+        <div className="px-4 py-2 bg-red-50 dark:bg-red-900/20 border-t border-red-100 dark:border-red-800">
+          <p className="text-sm text-red-600 dark:text-red-400">
+            Click the delete button again to confirm deletion. This cannot be undone.
+          </p>
+        </div>
+      )}
       
       {isExpanded && !activity.isCoded && (
         <div className="px-4 pb-4 bg-gray-50 dark:bg-gray-800/50">

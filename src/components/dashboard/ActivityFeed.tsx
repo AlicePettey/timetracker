@@ -2,14 +2,16 @@ import React, { useState, useMemo } from 'react';
 import { Activity, Project } from '@/types';
 import { formatDate, isWithinDays } from '@/utils/timeUtils';
 import ActivityItem from './ActivityItem';
-import { SearchIcon, FilterIcon, CheckIcon } from '@/components/ui/Icons';
+import { SearchIcon, FilterIcon, CheckIcon, TrashIcon } from '@/components/ui/Icons';
 
 interface ActivityFeedProps {
   activities: Activity[];
   projects: Project[];
   onCode: (activityId: string, projectId: string, taskId: string) => void;
   onUncode: (activityId: string) => void;
+  onDelete?: (activityId: string) => void;
   onBulkCode: (activityIds: string[], projectId: string, taskId: string) => void;
+  onBulkDelete?: (activityIds: string[]) => void;
   title?: string;
   showUncodedOnly?: boolean;
   maxDays?: number;
@@ -20,7 +22,9 @@ const ActivityFeed: React.FC<ActivityFeedProps> = ({
   projects,
   onCode,
   onUncode,
+  onDelete,
   onBulkCode,
+  onBulkDelete,
   title = 'Activity Feed',
   showUncodedOnly = false,
   maxDays = 30
@@ -30,6 +34,7 @@ const ActivityFeed: React.FC<ActivityFeedProps> = ({
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkProject, setBulkProject] = useState('');
   const [bulkTask, setBulkTask] = useState('');
+  const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
 
   // Filter activities
   const filteredActivities = useMemo(() => {
@@ -92,6 +97,22 @@ const ActivityFeed: React.FC<ActivityFeedProps> = ({
     }
   };
 
+  const handleBulkDelete = () => {
+    if (showBulkDeleteConfirm && selectedIds.size > 0) {
+      if (onBulkDelete) {
+        onBulkDelete(Array.from(selectedIds));
+      } else if (onDelete) {
+        // Fall back to individual deletes if no bulk delete provided
+        Array.from(selectedIds).forEach(id => onDelete(id));
+      }
+      setSelectedIds(new Set());
+      setShowBulkDeleteConfirm(false);
+    } else {
+      setShowBulkDeleteConfirm(true);
+      setTimeout(() => setShowBulkDeleteConfirm(false), 3000);
+    }
+  };
+
   const bulkTasks = projects.find(p => p.id === bulkProject)?.tasks || [];
 
   return (
@@ -136,7 +157,7 @@ const ActivityFeed: React.FC<ActivityFeedProps> = ({
       {/* Bulk Actions */}
       {showUncodedOnly && filteredActivities.length > 0 && (
         <div className="p-4 bg-gray-50 dark:bg-gray-800/50 border-b border-gray-100 dark:border-gray-700">
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4 flex-wrap">
             <label className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
               <input
                 type="checkbox"
@@ -149,40 +170,66 @@ const ActivityFeed: React.FC<ActivityFeedProps> = ({
             
             {selectedIds.size > 0 && (
               <>
-                <select
-                  value={bulkProject}
-                  onChange={(e) => { setBulkProject(e.target.value); setBulkTask(''); }}
-                  className="px-3 py-1.5 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm"
-                >
-                  <option value="">Project...</option>
-                  {projects.filter(p => !p.isArchived).map(p => (
-                    <option key={p.id} value={p.id}>{p.name}</option>
-                  ))}
-                </select>
-                
-                <select
-                  value={bulkTask}
-                  onChange={(e) => setBulkTask(e.target.value)}
-                  disabled={!bulkProject}
-                  className="px-3 py-1.5 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm disabled:opacity-50"
-                >
-                  <option value="">Task...</option>
-                  {bulkTasks.map(t => (
-                    <option key={t.id} value={t.id}>{t.name}</option>
-                  ))}
-                </select>
-                
-                <button
-                  onClick={handleBulkAssign}
-                  disabled={!bulkProject || !bulkTask}
-                  className="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
-                >
-                  <CheckIcon size={16} />
-                  Assign Selected
-                </button>
+                <div className="flex items-center gap-2">
+                  <select
+                    value={bulkProject}
+                    onChange={(e) => { setBulkProject(e.target.value); setBulkTask(''); }}
+                    className="px-3 py-1.5 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm"
+                  >
+                    <option value="">Project...</option>
+                    {projects.filter(p => !p.isArchived).map(p => (
+                      <option key={p.id} value={p.id}>{p.name}</option>
+                    ))}
+                  </select>
+                  
+                  <select
+                    value={bulkTask}
+                    onChange={(e) => setBulkTask(e.target.value)}
+                    disabled={!bulkProject}
+                    className="px-3 py-1.5 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm disabled:opacity-50"
+                  >
+                    <option value="">Task...</option>
+                    {bulkTasks.map(t => (
+                      <option key={t.id} value={t.id}>{t.name}</option>
+                    ))}
+                  </select>
+                  
+                  <button
+                    onClick={handleBulkAssign}
+                    disabled={!bulkProject || !bulkTask}
+                    className="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
+                  >
+                    <CheckIcon size={16} />
+                    Assign Selected
+                  </button>
+                </div>
+
+                {/* Bulk Delete Button */}
+                {(onDelete || onBulkDelete) && (
+                  <button
+                    onClick={handleBulkDelete}
+                    className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${
+                      showBulkDeleteConfirm
+                        ? 'bg-red-600 hover:bg-red-700 text-white'
+                        : 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/50'
+                    }`}
+                  >
+                    <TrashIcon size={16} />
+                    {showBulkDeleteConfirm ? 'Confirm Delete' : `Delete ${selectedIds.size} Selected`}
+                  </button>
+                )}
               </>
             )}
           </div>
+          
+          {/* Bulk Delete Warning */}
+          {showBulkDeleteConfirm && selectedIds.size > 0 && (
+            <div className="mt-3 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+              <p className="text-sm text-red-600 dark:text-red-400">
+                You are about to permanently delete {selectedIds.size} activities. This action cannot be undone. Click "Confirm Delete" to proceed.
+              </p>
+            </div>
+          )}
         </div>
       )}
 
@@ -207,6 +254,7 @@ const ActivityFeed: React.FC<ActivityFeedProps> = ({
                   projects={projects}
                   onCode={onCode}
                   onUncode={onUncode}
+                  onDelete={onDelete}
                   isSelected={selectedIds.has(activity.id)}
                   onSelect={showUncodedOnly ? handleSelect : undefined}
                   showCheckbox={showUncodedOnly}

@@ -25,6 +25,7 @@ interface DashboardViewProps {
   };
   onCode: (activityId: string, projectId: string, taskId: string) => void;
   onUncode: (activityId: string) => void;
+  onDelete?: (activityId: string) => void;
   todayActivities: Activity[];
 }
 
@@ -34,6 +35,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
   stats,
   onCode,
   onUncode,
+  onDelete,
   todayActivities
 }) => {
   // Calculate project breakdown for today
@@ -156,6 +158,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                   projects={projects}
                   onCode={onCode}
                   onUncode={onUncode}
+                  onDelete={onDelete}
                 />
               ))
             )}

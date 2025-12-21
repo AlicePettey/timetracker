@@ -58,6 +58,8 @@ const AppLayout: React.FC = () => {
     codeActivity,
     uncodeActivity,
     bulkCodeActivities,
+    deleteActivity,
+    bulkDeleteActivities,
     addManualEntry,
     addAutoTrackedActivity,
     getTodayActivities,
@@ -67,6 +69,7 @@ const AppLayout: React.FC = () => {
     exportToCSV,
     toggleTracking
   } = useTimeTracker(user);
+
 
   // Callback for when tab tracker completes an activity
   const handleActivityComplete = useCallback((activity: Activity) => {
@@ -173,6 +176,7 @@ const AppLayout: React.FC = () => {
                   stats={stats}
                   onCode={codeActivity}
                   onUncode={uncodeActivity}
+                  onDelete={deleteActivity}
                   todayActivities={todayActivities}
                 />
               </div>
@@ -189,6 +193,7 @@ const AppLayout: React.FC = () => {
             </div>
           </div>
         );
+
       
       case 'activities':
         return (
@@ -197,11 +202,14 @@ const AppLayout: React.FC = () => {
             projects={projects}
             onCode={codeActivity}
             onUncode={uncodeActivity}
+            onDelete={deleteActivity}
             onBulkCode={bulkCodeActivities}
+            onBulkDelete={bulkDeleteActivities}
             title="All Activities"
             showUncodedOnly={false}
           />
         );
+
       
       case 'uncoded':
         return (
@@ -232,7 +240,9 @@ const AppLayout: React.FC = () => {
               projects={projects}
               onCode={codeActivity}
               onUncode={uncodeActivity}
+              onDelete={deleteActivity}
               onBulkCode={bulkCodeActivities}
+              onBulkDelete={bulkDeleteActivities}
               title="Uncoded Activities (30 Day Buffer)"
               showUncodedOnly={true}
               maxDays={30}
@@ -240,6 +250,7 @@ const AppLayout: React.FC = () => {
           </div>
         );
       
+
       case 'projects':
         return (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

@@ -546,6 +546,25 @@ export const useTimeTracker = (user: User | null = null) => {
     setActivities(prev => prev.filter(a => a.id !== activityId));
   }, [user]);
 
+  const bulkDeleteActivities = useCallback(async (activityIds: string[]) => {
+    if (activityIds.length === 0) return;
+    
+    if (user) {
+      const { error } = await supabase
+        .from('activities')
+        .delete()
+        .in('id', activityIds);
+      
+      if (error) {
+        console.error('Error bulk deleting activities:', error);
+        return;
+      }
+    }
+    
+    setActivities(prev => prev.filter(a => !activityIds.includes(a.id)));
+  }, [user]);
+
+
   // Add manual activity entry
   const addManualEntry = useCallback(async (projectId: string, taskId: string, duration: number, description: string) => {
     const now = new Date();
@@ -781,6 +800,7 @@ export const useTimeTracker = (user: User | null = null) => {
     uncodeActivity,
     bulkCodeActivities,
     deleteActivity,
+    bulkDeleteActivities,
     addManualEntry,
     addAutoTrackedActivity,
     getUncodedActivities,
@@ -792,3 +812,4 @@ export const useTimeTracker = (user: User | null = null) => {
     migrateLocalDataToDatabase
   };
 };
+
