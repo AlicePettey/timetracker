@@ -1,0 +1,7 @@
+owner: timetracker
+repo: timetracker-desktop
+provider: github
+releaseType: release
+updaterCacheDirName: timetracker-desktop-updater
+publisherName:
+  - TimeTracker
